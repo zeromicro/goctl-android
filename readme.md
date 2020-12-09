@@ -1,7 +1,7 @@
 # goctl-android
 
 ![go-zero](https://img.shields.io/badge/Github-go--zero-brightgreen?link=https://github.com/tal-tech/go-zero&logo=github)
-![license](https://img.shields.io/badge/License-Apache-blue?link=https://github.com/zeromicro/goctl-android/blob/master/LICENSE&logo=apache)
+![License](https://img.shields.io/badge/License-MIT-blue?link=https://github.com/zeromicro/goctl-android/blob/main/LICENSE)
 ![Go](https://github.com/zeromicro/goctl-android/workflows/Go/badge.svg)
 
 goctl-android是一款基于goctl的插件，用于生成java（android）端http client请求代码。
