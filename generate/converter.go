@@ -156,7 +156,7 @@ func getRoute(in []spec.Route, m map[string]*Bean) ([]string, []*Route) {
 		}
 
 		list = append(list, &Route{
-			MethodName:       stringx.From(handlerName).UnTitle(),
+			MethodName:       stringx.From(handlerName).Untitle(),
 			Method:           strings.ToUpper(each.Method),
 			Path:             path,
 			RequestBeanName:  stringx.From(each.RequestType.Name).Title(),

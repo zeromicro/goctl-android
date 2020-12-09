@@ -61,7 +61,7 @@ func (b *Bean) GetQuery() string {
 		if m == nil {
 			continue
 		}
-		query = append(query, fmt.Sprintf(`@Query("%s") %s %s`, item, m.TypeName, m.Name.UnTitle()))
+		query = append(query, fmt.Sprintf(`@Query("%s") %s %s`, item, m.TypeName, m.Name.Untitle()))
 	}
 	return strings.Join(query, ", ")
 }
