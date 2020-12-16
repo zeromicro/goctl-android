@@ -44,6 +44,9 @@ type (
 		tp   string
 		name string
 	}
+	Type struct {
+		Name string
+	}
 )
 
 func (p *Plugin) SetParentPackage(parentPackage string) {
@@ -227,7 +230,7 @@ func getBean(parentPackage string, tp spec.Type) ([]*Bean, error) {
 }
 
 func getBeans(parentPackage string, member spec.Member, bean *Bean) ([]*Bean, error) {
-	beans, imports, typeName, err := getTypeName(parentPackage, member.Expr)
+	beans, imports, typeName, err := getTypeName(parentPackage, member.Expr, member.Type == "interface{}")
 	if err != nil {
 		return nil, err
 	}
@@ -263,17 +266,17 @@ func getBeans(parentPackage string, member spec.Member, bean *Bean) ([]*Bean, er
 	return beans, nil
 }
 
-func getTypeName(parentPackage string, expr interface{}) ([]*Bean, []string, string, error) {
+func getTypeName(parentPackage string, expr interface{}, inter bool) ([]*Bean, []string, string, error) {
 	set := collection.NewSet()
 	switch v := expr.(type) {
 	case map[string]interface{}:
-		return getTypeName(parentPackage, unJsonMarshal(expr))
+		return getTypeName(parentPackage, unJsonMarshal(expr, inter), false)
 	case spec.BasicType:
 		imp, typeName := toJavaType(parentPackage, v.Name)
 		set.AddStr(imp)
 		return nil, set.KeysStr(), typeName, nil
 	case spec.PointerType:
-		return getTypeName(parentPackage, v.Star)
+		return getTypeName(parentPackage, v.Star, false)
 	case spec.MapType:
 		set.AddStr("import java.util.HashMap;")
 		beans, imports, typeName, err := toJavaMap(parentPackage, v)
@@ -303,12 +306,14 @@ func getTypeName(parentPackage string, expr interface{}) ([]*Bean, []string, str
 		imp, typeName := toJavaType(parentPackage, v.Name)
 		set.AddStr(imp)
 		return beans, set.KeysStr(), typeName, nil
+	case Type:
+		return nil, nil, v.Name, nil
 	default:
 		return nil, nil, "", fmt.Errorf("unsupported type: %v", v)
 	}
 }
 
-func unJsonMarshal(expr interface{}) interface{} {
+func unJsonMarshal(expr interface{}, inter bool) interface{} {
 	m := expr.(map[string]interface{})
 	data, err := json.Marshal(expr)
 	if err != nil {
@@ -320,7 +325,7 @@ func unJsonMarshal(expr interface{}) interface{} {
 	var mapType spec.MapType
 	var arrayType spec.ArrayType
 	var interfaceType spec.InterfaceType
-	var tpType spec.Type
+	var tpType Type
 
 	var keys []string
 	for key := range m {
@@ -344,11 +349,11 @@ func unJsonMarshal(expr interface{}) interface{} {
 		return arrayType
 	}
 	if sx.Contains(keys, "StringExpr") && len(keys) == 1 {
-		_ = json.Unmarshal(data, &interfaceType)
-		return interfaceType
-	}
-	if sx.Contains(keys, "Name") && sx.Contains(keys, "Annotations") && sx.Contains(keys, "Members") && len(keys) == 3 {
-		_ = json.Unmarshal(data, &tpType)
+		if inter {
+			_ = json.Unmarshal(data, &interfaceType)
+			return interfaceType
+		}
+		tpType.Name = fmt.Sprintf("%v", m[keys[0]])
 		return tpType
 	}
 
@@ -356,7 +361,7 @@ func unJsonMarshal(expr interface{}) interface{} {
 }
 
 func toJavaArray(parentPackage string, a spec.ArrayType) ([]*Bean, []string, string, error) {
-	beans, imports, typeName, err := getTypeName(parentPackage, a.ArrayType)
+	beans, imports, typeName, err := getTypeName(parentPackage, a.ArrayType, false)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -365,7 +370,7 @@ func toJavaArray(parentPackage string, a spec.ArrayType) ([]*Bean, []string, str
 }
 
 func toJavaMap(parentPackage string, m spec.MapType) ([]*Bean, []string, string, error) {
-	beans, imports, typeName, err := getTypeName(parentPackage, m.Value)
+	beans, imports, typeName, err := getTypeName(parentPackage, m.Value, false)
 	if err != nil {
 		return nil, nil, "", err
 	}
